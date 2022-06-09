@@ -3,6 +3,7 @@ package com.example.photopickerandroid13
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -13,6 +14,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var pickSingleMediaLauncher: ActivityResultLauncher<Intent>
@@ -30,7 +32,7 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "Failed picking media.", Toast.LENGTH_SHORT).show()
                 } else {
                     val uri = it.data?.data
-                    showSnackBar("SUCCESS: ${uri?.path}")
+                    showSnackBar("SUCCESS: ${uri?.path}", uri)
                 }
             }
         // Initialize multiple media picker launcher
@@ -44,8 +46,9 @@ class MainActivity : AppCompatActivity() {
                     for (index in 0 until uris.itemCount) {
                         uriPaths += uris.getItemAt(index).uri.path
                         uriPaths += "\n"
+                        showSnackBar("SUCCESS , Display Last Photo : ${uriPaths}", uris.getItemAt(index).uri)
                     }
-                    showSnackBar("SUCCESS: $uriPaths")
+
                 }
             }
 
@@ -95,7 +98,8 @@ class MainActivity : AppCompatActivity() {
     /**
      * Shows [message] in a [Snackbar].
      */
-    private fun showSnackBar(message: String) {
+    private fun showSnackBar(message: String, path: Uri?) {
+        ivImage.setImageURI(path)
         val snackBar = Snackbar.make(
             findViewById(android.R.id.content),
             message,
