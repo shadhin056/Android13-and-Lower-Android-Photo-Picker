@@ -7,13 +7,16 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
+import com.theartofdev.edmodo.cropper.CropImage
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -32,7 +35,9 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "Failed picking media.", Toast.LENGTH_SHORT).show()
                 } else {
                     val uri = it.data?.data
-                    showSnackBar("SUCCESS: ${uri?.path}", uri)
+                    CropImage.activity(uri)
+                        .start(this);
+                    //showSnackBar("SUCCESS: ${uri?.path}", uri)
                 }
             }
         // Initialize multiple media picker launcher
@@ -46,7 +51,8 @@ class MainActivity : AppCompatActivity() {
                     for (index in 0 until uris.itemCount) {
                         uriPaths += uris.getItemAt(index).uri.path
                         uriPaths += "\n"
-                        showSnackBar("SUCCESS , Display Last Photo : ${uriPaths}", uris.getItemAt(index).uri)
+                        //showSnackBar("SUCCESS , Display Last Photo : ${uriPaths}", uris.getItemAt(index).uri)
+                        CropImage.activity(uris.getItemAt(index).uri)
                     }
 
                 }
@@ -99,7 +105,7 @@ class MainActivity : AppCompatActivity() {
      * Shows [message] in a [Snackbar].
      */
     private fun showSnackBar(message: String, path: Uri?) {
-        ivImage.setImageURI(path)
+        //ivImage.setImageURI(path)
         val snackBar = Snackbar.make(
             findViewById(android.R.id.content),
             message,
@@ -109,5 +115,17 @@ class MainActivity : AppCompatActivity() {
         snackBar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text).maxLines =
             10
         snackBar.show()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            val result = CropImage.getActivityResult(data)
+            if (resultCode == RESULT_OK) {
+                ivImage.setImageURI(result.uri)
+            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
+                val error = result.error
+            }
+        }
     }
 }
