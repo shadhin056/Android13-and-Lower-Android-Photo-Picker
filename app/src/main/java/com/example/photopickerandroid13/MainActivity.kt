@@ -35,9 +35,11 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "Failed picking media.", Toast.LENGTH_SHORT).show()
                 } else {
                     val uri = it.data?.data
+                    /*
                     CropImage.activity(uri)
                         .start(this);
-                    //showSnackBar("SUCCESS: ${uri?.path}", uri)
+                        */
+                    showSnackBar("SUCCESS: ${uri?.path}", uri)
                 }
             }
         // Initialize multiple media picker launcher
@@ -52,13 +54,12 @@ class MainActivity : AppCompatActivity() {
                         uriPaths += uris.getItemAt(index).uri.path
                         uriPaths += "\n"
                         //showSnackBar("SUCCESS , Display Last Photo : ${uriPaths}", uris.getItemAt(index).uri)
-                        CropImage.activity(uris.getItemAt(index).uri)
+                       // CropImage.activity(uris.getItemAt(index).uri)
                     }
 
                 }
             }
 
-        if (Build.VERSION.CODENAME == "Tiramisu") {
             // Setup pick 1 image/video
             findViewById<Button>(R.id.button_pick_photo_video).setOnClickListener {
                 pickSingleMediaLauncher.launch(
@@ -96,16 +97,14 @@ class MainActivity : AppCompatActivity() {
             // Setup max pick medias
             val maxPickMedia = MediaStore.getPickImagesMaxLimit()
             findViewById<TextView>(R.id.text_mack_pick_media).text = "Max Pick Media: $maxPickMedia"
-        } else {
-            Toast.makeText(this, "Please use Android 13 device.", Toast.LENGTH_SHORT).show()
-        }
+
     }
 
     /**
      * Shows [message] in a [Snackbar].
      */
     private fun showSnackBar(message: String, path: Uri?) {
-        //ivImage.setImageURI(path)
+        ivImage.setImageURI(path)
         val snackBar = Snackbar.make(
             findViewById(android.R.id.content),
             message,
@@ -117,15 +116,4 @@ class MainActivity : AppCompatActivity() {
         snackBar.show()
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
-            val result = CropImage.getActivityResult(data)
-            if (resultCode == RESULT_OK) {
-                ivImage.setImageURI(result.uri)
-            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
-                val error = result.error
-            }
-        }
-    }
 }

@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace 'com.example.photopickerandroid13'
-    compileSdkVersion "android-Tiramisu"
+    compileSdkVersion 33
 
     defaultConfig {
         applicationId "com.example.photopickerandroid13"
         minSdk 21
-        targetSdkVersion "Tiramisu"
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
 
