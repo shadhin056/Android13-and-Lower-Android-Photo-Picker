@@ -18,12 +18,10 @@ import com.yalantis.ucrop.UCrop
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 
-
 class MainActivity : AppCompatActivity() {
     private lateinit var pickSingleMediaLauncher: ActivityResultLauncher<Intent>
     private lateinit var pickMultipleMediaLauncher: ActivityResultLauncher<Intent>
 
-    @SuppressLint("NewApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -31,18 +29,28 @@ class MainActivity : AppCompatActivity() {
         // Initialize single media picker launcher
         pickSingleMediaLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-                if (it.resultCode != Activity.RESULT_OK) {
-                    Toast.makeText(this, "Failed picking media.", Toast.LENGTH_SHORT).show()
-                } else {
-                    val uri = it.data?.data
-                    /*
-                    CropImage.activity(uri)
-                        .start(this);
-                        */
-                    if (uri != null) {
-                        startCrop(uri)
-                    };
-                    //showSnackBar("SUCCESS: ${uri?.path}", uri)
+
+                if (it.resultCode == Activity.RESULT_OK) {
+                        val selectedUri = it.data?.data
+                        if (selectedUri != null) {
+                            it.data?.data?.let { it1 -> startCrop(it1) }
+                        } else {
+                            Toast.makeText(
+                                this,
+                                "toast_cannot_retrieve_selected_image",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } else if (it.resultCode == UCrop.REQUEST_CROP) {
+                        if (it.data != null) {
+                            handleCropResult(it.data!!)
+                        }
+                    }
+
+                if (it.resultCode == UCrop.RESULT_ERROR) {
+                    if (it.data != null) {
+                        handleCropError(it.data!!)
+                    }
                 }
             }
         // Initialize multiple media picker launcher
@@ -98,8 +106,8 @@ class MainActivity : AppCompatActivity() {
             )
         }
         // Setup max pick medias
-        val maxPickMedia = MediaStore.getPickImagesMaxLimit()
-        findViewById<TextView>(R.id.text_mack_pick_media).text = "Max Pick Media: $maxPickMedia"
+        //val maxPickMedia = MediaStore.getPickImagesMaxLimit()
+        //findViewById<TextView>(R.id.text_mack_pick_media).text = "Max Pick Media: $maxPickMedia"
 
     }
 
@@ -129,29 +137,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == RESULT_OK) {
-            if (requestCode == 1) {
-                val selectedUri = data?.data
-                if (selectedUri != null) {
-                    startCrop(selectedUri)
-                } else {
-                    Toast.makeText(
-                        this,
-                        "toast_cannot_retrieve_selected_image",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } else if (requestCode == UCrop.REQUEST_CROP) {
-                if (data != null) {
-                    handleCropResult(data)
-                }
-            }
-        }
-        if (resultCode == UCrop.RESULT_ERROR) {
-            if (data != null) {
-                handleCropError(data)
-            }
-        }
+
     }
 
     private fun handleCropResult(result: Intent) {
