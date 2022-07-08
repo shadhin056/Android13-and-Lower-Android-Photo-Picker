@@ -1,12 +1,10 @@
 package com.example.photopickerandroid13
-
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -14,6 +12,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
+import com.theartofdev.edmodo.cropper.CropImage
+import com.theartofdev.edmodo.cropper.CropImageView
 import com.yalantis.ucrop.UCrop
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
@@ -21,6 +21,7 @@ import java.io.File
 class MainActivity : AppCompatActivity() {
     private lateinit var pickSingleMediaLauncher: ActivityResultLauncher<Intent>
     private lateinit var pickMultipleMediaLauncher: ActivityResultLauncher<Intent>
+    var uCrop = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +30,6 @@ class MainActivity : AppCompatActivity() {
         // Initialize single media picker launcher
         pickSingleMediaLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-
                 if (it.resultCode == Activity.RESULT_OK) {
                         val selectedUri = it.data?.data
                         if (selectedUri != null) {
@@ -37,22 +37,13 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             Toast.makeText(
                                 this,
-                                "toast_cannot_retrieve_selected_image",
+                                "Failed picking Image",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
-                    } else if (it.resultCode == UCrop.REQUEST_CROP) {
-                        if (it.data != null) {
-                            handleCropResult(it.data!!)
-                        }
-                    }
-
-                if (it.resultCode == UCrop.RESULT_ERROR) {
-                    if (it.data != null) {
-                        handleCropError(it.data!!)
-                    }
                 }
             }
+
         // Initialize multiple media picker launcher
         pickMultipleMediaLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -67,7 +58,6 @@ class MainActivity : AppCompatActivity() {
                         //showSnackBar("SUCCESS , Display Last Photo : ${uriPaths}", uris.getItemAt(index).uri)
                         // CropImage.activity(uris.getItemAt(index).uri)
                     }
-
                 }
             }
 
@@ -77,15 +67,21 @@ class MainActivity : AppCompatActivity() {
                 Intent(MediaStore.ACTION_PICK_IMAGES)
             )
         }
+
         // Setup pick 1 image
         findViewById<Button>(R.id.button_pick_photo).setOnClickListener {
-            pickSingleMediaLauncher.launch(
-                Intent(MediaStore.ACTION_PICK_IMAGES)
-                    .apply {
-                        type = "image/*"
-                    }
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                pickSingleMediaLauncher.launch(
+                    Intent(MediaStore.ACTION_PICK_IMAGES)
+                        .apply {
+                            type = "image/*"
+                        }
+                )
+            }else{
+                CropImage.activity(null).setGuidelines(CropImageView.Guidelines.ON).start(this)
+            }
         }
+
         // Setup pick 1 video
         findViewById<Button>(R.id.button_pick_video).setOnClickListener {
             pickSingleMediaLauncher.launch(
@@ -95,6 +91,7 @@ class MainActivity : AppCompatActivity() {
                     }
             )
         }
+
         // Setup pick 3 images
         findViewById<Button>(R.id.button_pick_3_photos).setOnClickListener {
             pickMultipleMediaLauncher.launch(
@@ -108,12 +105,8 @@ class MainActivity : AppCompatActivity() {
         // Setup max pick medias
         //val maxPickMedia = MediaStore.getPickImagesMaxLimit()
         //findViewById<TextView>(R.id.text_mack_pick_media).text = "Max Pick Media: $maxPickMedia"
-
     }
 
-    /**
-     * Shows [message] in a [Snackbar].
-     */
     private fun showSnackBar(message: String, path: Uri?) {
         ivImage.setImageURI(path)
         val snackBar = Snackbar.make(
@@ -131,13 +124,7 @@ class MainActivity : AppCompatActivity() {
         var destinationFileName: String = uri.pathSegments.last() + ".png"
         var uCrop = UCrop.of(uri, Uri.fromFile(File(cacheDir, destinationFileName)))
         uCrop = advancedConfig(uCrop)
-        // else start uCrop Activity
         uCrop.start(this)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
     }
 
     private fun handleCropResult(result: Intent) {
@@ -147,7 +134,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             Toast.makeText(
                 this,
-                "toast_cannot_retrieve_cropped_image",
+                "Can't view the cropped image",
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -156,10 +143,9 @@ class MainActivity : AppCompatActivity() {
     private fun handleCropError(result: Intent) {
         val cropError = UCrop.getError(result)
         if (cropError != null) {
-            Log.e("XXXX", "handleCropError: ", cropError)
             Toast.makeText(this, cropError.message, Toast.LENGTH_LONG).show()
         } else {
-            Toast.makeText(this, "toast_unexpected_error", Toast.LENGTH_SHORT)
+            Toast.makeText(this, "Unexpected Error", Toast.LENGTH_SHORT)
                 .show()
         }
     }
@@ -167,56 +153,40 @@ class MainActivity : AppCompatActivity() {
     private fun advancedConfig(uCrop: UCrop): UCrop? {
         val options = UCrop.Options()
         options.setFreeStyleCropEnabled(true)
-
-        /*
-        If you want to configure how gestures work for all UCropActivity tabs
-
-        options.setAllowedGestures(UCropActivity.SCALE, UCropActivity.ROTATE, UCropActivity.ALL);
-        * */
-
-        /*
-        This sets max size for bitmap that will be decoded from source Uri.
-        More size - more memory allocation, default implementation uses screen diagonal.
-
-        options.setMaxBitmapSize(640);
-        * */
-
-
-        /*
-
-        Tune everything (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧
-
-        options.setMaxScaleMultiplier(5);
-        options.setImageToCropBoundsAnimDuration(666);
-        options.setDimmedLayerColor(Color.CYAN);
-        options.setCircleDimmedLayer(true);
-        options.setShowCropFrame(false);
-        options.setCropGridStrokeWidth(20);
-        options.setCropGridColor(Color.GREEN);
-        options.setCropGridColumnCount(2);
-        options.setCropGridRowCount(1);
-        options.setToolbarCropDrawable(R.drawable.your_crop_icon);
-        options.setToolbarCancelDrawable(R.drawable.your_cancel_icon);
-
-        // Color palette
-        options.setToolbarColor(ContextCompat.getColor(this, R.color.your_color_res));
-        options.setStatusBarColor(ContextCompat.getColor(this, R.color.your_color_res));
-        options.setToolbarWidgetColor(ContextCompat.getColor(this, R.color.your_color_res));
-        options.setRootViewBackgroundColor(ContextCompat.getColor(this, R.color.your_color_res));
-        options.setActiveControlsWidgetColor(ContextCompat.getColor(this, R.color.your_color_res));
-
-        // Aspect ratio options
-        options.setAspectRatioOptions(2,
-            new AspectRatio("WOW", 1, 2),
-            new AspectRatio("MUCH", 3, 4),
-            new AspectRatio("RATIO", CropImageView.DEFAULT_ASPECT_RATIO, CropImageView.DEFAULT_ASPECT_RATIO),
-            new AspectRatio("SO", 16, 9),
-            new AspectRatio("ASPECT", 1, 1));
-        options.withAspectRatio(CropImageView.DEFAULT_ASPECT_RATIO, CropImageView.DEFAULT_ASPECT_RATIO);
-        options.useSourceImageAspectRatio();
-
-       */return uCrop.withOptions(options)
+        return uCrop.withOptions(options)
     }
 
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
 
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            val result = CropImage.getActivityResult(data)
+            if (resultCode == RESULT_OK) {
+                try {
+                    val uri = result?.uri
+                    if (uri != null) {
+                        ivImage.setImageURI(uri)
+                    }
+                } catch (e: Error) {
+                    e.printStackTrace()
+                }
+            }
+            else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
+                if (result != null) {
+                    Toast.makeText(this, "Cropping failed " + result.error, Toast.LENGTH_LONG)
+                        .show()
+                }
+            }
+        }else{
+            if (data != null) {
+                    handleCropResult(data!!)
+                }
+            if (resultCode == UCrop.RESULT_ERROR) {
+                if (data != null) {
+                    handleCropError(data!!)
+                }
+            }
+        }
+    }
 }

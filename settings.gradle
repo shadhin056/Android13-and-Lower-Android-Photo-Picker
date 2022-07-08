@@ -18,5 +18,5 @@ dependencyResolutionManagement {
         }
     }
 }
-rootProject.name = "Photo Picker Android 13"
+rootProject.name = "Photo Picker"
 include ':app'

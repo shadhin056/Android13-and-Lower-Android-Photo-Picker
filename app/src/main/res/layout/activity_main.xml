@@ -34,9 +34,9 @@
     <TextView
         android:id="@+id/text_mack_pick_media"
         android:text="Max Pick Media: -"
+        android:visibility="gone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
-
 
     <ImageView
         android:id="@+id/ivImage"
@@ -45,6 +45,5 @@
         android:layout_height="250dp"
         android:layout_marginTop="30dp"
         />
-
 
 </androidx.appcompat.widget.LinearLayoutCompat>
